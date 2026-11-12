@@ -1,0 +1,5 @@
+@import "tailwindcss";
+html{scroll-behavior:smooth}
+body{background:#05070a;color:#fff;font-family:'Space Grotesk',system-ui,sans-serif}
+@keyframes dash{to{stroke-dashoffset:-20}}
+.flow{stroke:#22d3ee;stroke-width:1.5;stroke-dasharray:4 6;animation:dash 1s linear infinite;opacity:.8}
