@@ -75,18 +75,30 @@ export function listen(
   }
   return recognition;
 }
-
-export function speak(text: string, onEnd?: () => void) {
+export function speak(
+  text: string,
+  onEnd?: () => void,
+  language = 'uz-UZ',
+) {
   if (!speechSynthesisSupported) return onEnd?.();
+
   speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'uz-UZ';
-  const voice = speechSynthesis.getVoices().find((item) => item.lang.toLowerCase().startsWith('uz'));
+  utterance.lang = language;
+
+  const voice = speechSynthesis.getVoices().find(
+    (item) => item.lang.toLowerCase() === language.toLowerCase()
+  );
+
   if (voice) utterance.voice = voice;
+
   utterance.onend = () => onEnd?.();
   utterance.onerror = () => onEnd?.();
+
   speechSynthesis.speak(utterance);
 }
+
 
 export const stopSpeaking = () => {
   if (speechSynthesisSupported) speechSynthesis.cancel();

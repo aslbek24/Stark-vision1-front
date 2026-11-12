@@ -11,6 +11,7 @@ type State = 'idle' | 'listening' | 'thinking' | 'speaking';
 type RecognitionHandle = { stop(): void; abort(): void };
 
 export default function TestPanel() {
+  const [language, setLanguage] = useState<'uz-UZ' | 'en-US'>('uz-UZ');
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const recognition = useRef<RecognitionHandle | null>(null);
@@ -54,13 +55,18 @@ export default function TestPanel() {
     try {
       const frame = camOn && video.current ? captureFrame(video.current) : null;
       const prompt = frame ? question : `${question} (Kamera yoqilmagan, rasm yo‘q — buni aniq ayting.)`;
-      const result = await analyze(prompt, frame);
+      const languagePrompt =
+        language === 'en-US'
+          ? 'Answer only in English. Keep your answer short and clear. '
+          : 'Faqat o‘zbek tilida javob bering. Qisqa va tushunarli gapiring. ';
+
+      const result = await analyze(languagePrompt + prompt, frame);
       setMsgs((messages) => [...messages, { who: 'ai', text: result.text, demo: result.demo }]);
       setState('speaking');
       speak(result.text, () => {
         setState('idle');
         if (contRef.current) window.setTimeout(() => startListening(), 500);
-      });
+      }, language);
     } catch (e: any) {
       setError(e.message || 'AI so‘rovini bajarib bo‘lmadi.');
       setState('idle');
@@ -74,11 +80,17 @@ export default function TestPanel() {
     }
     stopSpeaking();
     setError(''); setState('listening');
+
     recognition.current = listen(
-      (transcript) => { recognition.current = null; void ask(transcript); },
+      (transcript) => {
+        recognition.current = null;
+        void ask(transcript);
+      },
       (message) => setError(message),
       () => setState((current) => current === 'listening' ? 'idle' : current),
+      language
     );
+
   };
 
   const toggleMic = () => {
@@ -136,6 +148,25 @@ export default function TestPanel() {
         </div>
         {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
         <div className="flex items-center justify-center gap-3">
+          <div className="flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setLanguage('uz-UZ')}
+              className={`rounded-lg px-5 py-2 text-sm ${language === 'uz-UZ' ? 'bg-blue-600' : 'bg-white/10'
+                }`}
+            >
+              🇺🇿 O‘zbekcha
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLanguage('en-US')}
+              className={`rounded-lg px-5 py-2 text-sm ${language === 'en-US' ? 'bg-blue-600' : 'bg-white/10'
+                }`}
+            >
+              🇬🇧 English
+            </button>
+          </div>
           <button
             onClick={toggleMic}
             disabled={!speechRecognitionSupported || state === 'thinking'}
@@ -145,7 +176,7 @@ export default function TestPanel() {
           >
             {state === 'speaking' ? <Square /> : <Mic />}
           </button>
-          <button onClick={() => last && speak(last.text)} disabled={!last} className="rounded-full bg-white/10 p-3 disabled:opacity-40" aria-label="Oxirgi javobni qayta eshittirish"><Repeat size={18} /></button>
+          <button onClick={() => last && speak(last.text, undefined, language)} disabled={!last} className="rounded-full bg-white/10 p-3 disabled:opacity-40" aria-label="Oxirgi javobni qayta eshittirish"><Repeat size={18} /></button>
         </div>
         <div className="flex flex-wrap justify-center gap-4 text-xs text-white/70">
           <label className="flex gap-1"><input type="checkbox" checked={cont} onChange={(e) => setCont(e.target.checked)} />Davomli suhbat</label>
