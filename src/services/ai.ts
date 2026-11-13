@@ -4,7 +4,10 @@ export interface AnalyzeResult {
   text: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (
+  import.meta.env.VITE_API_URL || 'https://stark-vision1.onrender.com'
+).replace(/\/$/, '');
+
 export async function getMode(): Promise<'live' | 'demo' | 'offline'> {
   try {
     const response = await fetch(`${API_URL}/api/health`);
